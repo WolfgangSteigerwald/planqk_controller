@@ -26,6 +26,7 @@ class TurtleBot:
         self.pose = Pose()
         self.yaw =0.0
         self.rate = rospy.Rate(20)
+        self.rate.sleep()
         
     def abs_of_twist(self, x):
         if x >= 0:
@@ -83,7 +84,8 @@ class TurtleBot:
                     else:
                         print('---2.1.2----')
                         return_val = angle + self.yaw
-
+                if abs(return_val) <= 0.1:
+                    return_val = return_val * 2
         if (angle > 0 ):
             if (self.yaw < 0):
                 print('---3----')
@@ -116,35 +118,57 @@ class TurtleBot:
         
         return return_val
 
+#    def set_intial_direction(self, goal_pose):
+#        
+#        vel_z = self.angular_vel(goal_pose)
+#        vel_msg = Twist()
+#        vel_msg = initializeTwist(vel_msg)
+#            #print('vel_z 1: ' + str(vel_z))
+#
+#        while self.abs(vel_z) > 0.1: 
+#            vel_z =1.0 * self.angular_vel(goal_pose)
+# 
+#            #print('vel_z : ' + str(vel_z))
+#            vel_msg.angular.z = vel_z
+#
+#            self.velocity_publisher.publish(vel_msg)
+#
+#            self.rate.sleep()
     def set_intial_direction(self, goal_pose):
         
         vel_z = self.angular_vel(goal_pose)
         vel_msg = Twist()
         vel_msg = initializeTwist(vel_msg)
+        if vel_z >= 0.0:
+            vel_z = 0.3
+        else:
+            vel_z = -0.3
             #print('vel_z 1: ' + str(vel_z))
-
-        while self.abs_of_twist(vel_z) > 0.1: 
-            vel_z =1.0 * self.angular_vel(goal_pose)
- 
-            #print('vel_z : ' + str(vel_z))
+        angle = self.steering_angle(goal_pose)
+        while round(angle,1) != round(self.yaw,1) : 
+            angle = self.steering_angle(goal_pose)
+            print('round angel: ' + str(round(angle,1)))
+            print('round   yaw: ' + str(round(self.yaw,1)))
+            
             vel_msg.angular.z = vel_z
 
             self.velocity_publisher.publish(vel_msg)
 
             self.rate.sleep()
+            
+        print('end intialize_direction')
         
 
 
     def move2goal(self, step):
         goal_pose = Pose()
         goal_pose.position.x = step.position.x
-        if step.position.y > 0:
-             goal_pose.position.y = step.position.y 
-        else:
-             goal_pose.position.y = step.position.y
+        goal_pose.position.y = step.position.y 
             
         print('goal_pose.position.x ' + str(goal_pose.position.x))
+        print('self.pose.position.x ' + str(self.pose.position.x))
         print('goal_pose.position.y ' + str(goal_pose.position.y))
+        print('self.pose.position.y ' + str(self.pose.position.y))
         distance_tolerance = float(0.02)
 
         vel_msg = Twist()
@@ -153,7 +177,7 @@ class TurtleBot:
         print('beginn while')
         i = 0
         while self.euclidean_distance(goal_pose) >= distance_tolerance:
-            #print(self.euclidean_distance(goal_pose))
+            print(self.euclidean_distance(goal_pose))
             if i == 0:
                 print('set_intial_direction-beginn')
                 self.set_intial_direction(goal_pose)
